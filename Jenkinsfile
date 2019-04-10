@@ -1,81 +1,84 @@
 node('master') {
 
     checkout scm
-    tool('jdk8')
-    tool('maven')
 
-    stage('Packaging') {
+    def javaHome = tool('jdk8')
+    def mavenHome = tool('maven')
 
-        sh 'mvn clean install -DskipTests'
-    }
+    withEnv('JAVA_HOME': "${javaHome}", 'MAVEN_HOME': "${mavenHome}", 'PATH+MAVEN': "${mavenHome}/bin") {
 
-    stage('Testing') {
-        parallel(
+        stage('Packaging') {
+            sh 'mvn clean install -DskipTests'
+        }
 
-                enforcingCodeStandards: stage('Enforcing Code Standards') {
+        stage('Testing') {
+            parallel(
 
-                    def checkstylePlugin = 'org.apache.maven.plugins:maven-checkstyle-plugin'
-                    sh "mvn ${checkstylePlugin}:check"
-                },
+                    enforcingCodeStandards: stage('Enforcing Code Standards') {
 
-                runningUnitTests: stage('Running Unit Tests') {
+                        def checkstylePlugin = 'org.apache.maven.plugins:maven-checkstyle-plugin'
+                        sh "mvn ${checkstylePlugin}:check"
+                    },
 
-                    def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
-                    sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
-                },
+                    runningUnitTests: stage('Running Unit Tests') {
 
-                runningMutationTests: stage('Running Mutation Tests') {
+                        def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
+                        sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
+                    },
 
-                    def pitestPlugin = 'org.pitest:pitest-maven'
-                    sh "mvn ${pitestPlugin}:mutationCoverage"
-                },
+                    runningMutationTests: stage('Running Mutation Tests') {
 
-                failFast: true
-        )
+                        def pitestPlugin = 'org.pitest:pitest-maven'
+                        sh "mvn ${pitestPlugin}:mutationCoverage"
+                    },
 
-        junit('target/**/TEST*.xml')
-    }
+                    failFast: true
+            )
 
-    stage('Analyzing') {
+            junit('target/**/TEST*.xml')
+        }
 
-        parallel (
-                runningSonarScan: stage('Running Sonar Scan') {
-                    withSonarQubeEnv('sonar-server') {
-                        sh 'mvn sonar:sonar'
-                    }
+        stage('Analyzing') {
 
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitForQualityGate(true)
-                    }
-                },
+            parallel(
+                    runningSonarScan: stage('Running Sonar Scan') {
+                        withSonarQubeEnv('sonar-server') {
+                            sh 'mvn sonar:sonar'
+                        }
 
-                runningCheckmarxScan: stage('Running Checkmarx Scan') {
-                    // step - checkmarx
-                    echo('Checkmarxing and Checkengelsing')
-                },
+                        timeout(time: 5, unit: 'MINUTES') {
+                            waitForQualityGate(true)
+                        }
+                    },
 
-                failFast: true
-        )
-    }
+                    runningCheckmarxScan: stage('Running Checkmarx Scan') {
+                        // step - checkmarx
+                        echo('Checkmarxing and Checkengelsing')
+                    },
 
-    stage('Publishing') {
+                    failFast: true
+            )
+        }
 
-        def deployPlugin = 'org.apache.maven.plugins:maven-deploy-plugin'
-        sh "mvn ${deployPlugin}:deploy dockerfile:build"
+        stage('Publishing') {
 
-        def pom = readMavenPom
-        def serviceImage = docker.image("${pom.getGroupId()}/${pom.getArtifactId()}:${pom.getVersion()}")
+            def deployPlugin = 'org.apache.maven.plugins:maven-deploy-plugin'
+            sh "mvn ${deployPlugin}:deploy dockerfile:build"
 
-        echo(serviceImage.id)
+            def pom = readMavenPom
+            def serviceImage = docker.image("${pom.getGroupId()}/${pom.getArtifactId()}:${pom.getVersion()}")
+
+            echo(serviceImage.id)
 //        serviceImage.push()
 //        serviceImage.push("${env.BUILD_TAG}")
 //        serviceImage.push('latest')
 
-        image
-    }
+            image
+        }
 
-    stage('Integrating') {
-        // KUBERNETES...
-        echo('Kubernetes!!!')
+        stage('Integrating') {
+            // KUBERNETES...
+            echo('Kubernetes!!!')
+        }
     }
 }
