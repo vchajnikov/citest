@@ -13,8 +13,6 @@ node('') {
         }
 
         stage('Testing') {
-            stash('ongoing-build')
-
             parallel(
 
                     'Code Standards': {
@@ -23,33 +21,26 @@ node('') {
                     },
 
                     'Unit Tests': {
-                        node('') {
-                            unstash('ongoing-build')
+                        def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
+                        sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
 
-                            def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
-                            sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
-                        }
+                        junit('target/**/TEST-*.xml')
                     },
 
                     'Mutation Tests': {
-                        node('') {
-                            unstash('ongoing-build')
-
-                            def pitestPlugin = 'org.pitest:pitest-maven'
-                            sh "mvn ${pitestPlugin}:mutationCoverage"
-                        }
+                        def pitestPlugin = 'org.pitest:pitest-maven'
+                        sh "mvn ${pitestPlugin}:mutationCoverage"
                     },
 
                     failFast: true
             )
-
-            junit('target/**/TEST-*.xml')
         }
 
         stage('Analyzing') {
-
             parallel(
+
                     'Sonar Scan': {
+
                         withSonarQubeEnv('sonar-server') {
                             def sonarPlugin = 'org.sonarsource.scanner.maven:sonar-maven-plugin'
                             sh "mvn ${sonarPlugin}:sonar"
@@ -61,6 +52,7 @@ node('') {
                     },
 
                     'Checkmarx Scan': {
+
                         // step - checkmarx
                         echo('Checkmarxing and Checkengelsing')
                     },
