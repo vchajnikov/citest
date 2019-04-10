@@ -2,6 +2,7 @@ node('master') {
 
     checkout scm
 
+    tool('docker')
     def javaHome = tool('jdk8')
     def mavenHome = tool('maven')
 
@@ -14,22 +15,28 @@ node('master') {
         stage('Testing') {
             parallel(
 
-                    enforcingCodeStandards: stage('Enforcing Code Standards') {
+                    enforcingCodeStandards: {
+                        stage('Enforcing Code Standards') {
 
-                        def checkstylePlugin = 'org.apache.maven.plugins:maven-checkstyle-plugin'
-                        sh "mvn ${checkstylePlugin}:check"
+                            def checkstylePlugin = 'org.apache.maven.plugins:maven-checkstyle-plugin'
+                            sh "mvn ${checkstylePlugin}:check"
+                        }
                     },
 
-                    runningUnitTests: stage('Running Unit Tests') {
+                    runningUnitTests: {
+                        stage('Running Unit Tests') {
 
-                        def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
-                        sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
+                            def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
+                            sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
+                        }
                     },
 
-                    runningMutationTests: stage('Running Mutation Tests') {
+                    runningMutationTests: {
+                        stage('Running Mutation Tests') {
 
-                        def pitestPlugin = 'org.pitest:pitest-maven'
-                        sh "mvn ${pitestPlugin}:mutationCoverage"
+                            def pitestPlugin = 'org.pitest:pitest-maven'
+                            sh "mvn ${pitestPlugin}:mutationCoverage"
+                        }
                     },
 
                     failFast: true
@@ -41,19 +48,23 @@ node('master') {
         stage('Analyzing') {
 
             parallel(
-                    runningSonarScan: stage('Running Sonar Scan') {
-                        withSonarQubeEnv('sonar-server') {
-                            sh 'mvn sonar:sonar'
-                        }
+                    runningSonarScan: {
+                        stage('Running Sonar Scan') {
+                            withSonarQubeEnv('sonar-server') {
+                                sh 'mvn sonar:sonar'
+                            }
 
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitForQualityGate(true)
+                            timeout(time: 5, unit: 'MINUTES') {
+                                waitForQualityGate(true)
+                            }
                         }
                     },
 
-                    runningCheckmarxScan: stage('Running Checkmarx Scan') {
-                        // step - checkmarx
-                        echo('Checkmarxing and Checkengelsing')
+                    runningCheckmarxScan: {
+                        stage('Running Checkmarx Scan') {
+                            // step - checkmarx
+                            echo('Checkmarxing and Checkengelsing')
+                        }
                     },
 
                     failFast: true
