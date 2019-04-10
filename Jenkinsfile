@@ -1,4 +1,4 @@
-node('master') {
+node('') {
 
     checkout scm
 
@@ -13,6 +13,8 @@ node('master') {
         }
 
         stage('Testing') {
+            stash('ongoing-build')
+
             parallel(
 
                     'Code Standards': {
@@ -21,13 +23,21 @@ node('master') {
                     },
 
                     'Unit Tests': {
-                        def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
-                        sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
+                        node('') {
+                            unstash('ongoing-build')
+
+                            def jacocoPlugin = 'org.jacoco:jacoco-maven-plugin'
+                            sh "mvn ${jacocoPlugin}:prepare-agent surefire:test ${jacocoPlugin}:report"
+                        }
                     },
 
                     'Mutation Tests': {
-                        def pitestPlugin = 'org.pitest:pitest-maven'
-                        sh "mvn ${pitestPlugin}:mutationCoverage"
+                        node('') {
+                            unstash('ongoing-build')
+
+                            def pitestPlugin = 'org.pitest:pitest-maven'
+                            sh "mvn ${pitestPlugin}:mutationCoverage"
+                        }
                     },
 
                     failFast: true
