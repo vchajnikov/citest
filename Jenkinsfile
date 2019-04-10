@@ -41,7 +41,8 @@ node('master') {
             parallel(
                     'Sonar Scan': {
                         withSonarQubeEnv('sonar-server') {
-                            sh 'mvn sonar:sonar'
+                            def sonarPlugin = 'org.sonarsource.scanner.maven:sonar-maven-plugin'
+                            sh "mvn ${sonarPlugin}:sonar"
                         }
 
                         timeout(time: 5, unit: 'MINUTES') {
@@ -63,7 +64,7 @@ node('master') {
 //            def deployPlugin = 'org.apache.maven.plugins:maven-deploy-plugin'
 //            sh "mvn ${deployPlugin}:deploy dockerfile:build"
 
-            def pom = readMavenPom
+            def pom = readMavenPom()
             def serviceImage = docker.image("${pom.getGroupId()}/${pom.getArtifactId()}:${pom.getVersion()}")
 
             echo(serviceImage.id)
