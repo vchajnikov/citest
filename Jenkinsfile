@@ -1,8 +1,11 @@
 node('master') {
 
+    checkout scm
+    tool('jdk8')
+    tool('maven')
+
     stage('Packaging') {
 
-        checkout scm
         sh 'mvn clean install -DskipTests'
     }
 
