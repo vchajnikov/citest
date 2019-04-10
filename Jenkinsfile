@@ -2,7 +2,7 @@ node('master') {
 
     stage('Packaging') {
 
-        git 'https://github.com/vchajnikov/citest.git'
+        checkout scm
         sh 'mvn clean install -DskipTests'
     }
 
