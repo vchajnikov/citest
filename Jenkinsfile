@@ -29,6 +29,8 @@ node('master') {
 
                 failFast: true
         )
+
+        junit('target/**/TEST*.xml')
     }
 
     stage('Analyzing') {
@@ -61,16 +63,16 @@ node('master') {
         def pom = readMavenPom
         def serviceImage = docker.image("${pom.getGroupId()}/${pom.getArtifactId()}:${pom.getVersion()}")
 
+        echo(serviceImage.id)
 //        serviceImage.push()
 //        serviceImage.push("${env.BUILD_TAG}")
 //        serviceImage.push('latest')
+
+        image
     }
 
     stage('Integrating') {
         // KUBERNETES...
-    }
-
-    stage('Reporting') {
-        // ?
+        echo('Kubernetes!!!')
     }
 }
