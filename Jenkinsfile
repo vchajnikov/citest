@@ -71,8 +71,6 @@ node('master') {
 //        serviceImage.push()
 //        serviceImage.push("${env.BUILD_TAG}")
 //        serviceImage.push('latest')
-
-            image
         }
 
         stage('Integrating') {
