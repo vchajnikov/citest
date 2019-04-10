@@ -5,7 +5,7 @@ node('master') {
     def javaHome = tool('jdk8')
     def mavenHome = tool('maven')
 
-    withEnv('JAVA_HOME': "${javaHome}", 'MAVEN_HOME': "${mavenHome}", 'PATH+MAVEN': "${mavenHome}/bin") {
+    withEnv(["JAVA_HOME=${javaHome}", "MAVEN_HOME=${mavenHome}", "PATH+MAVEN=${mavenHome}/bin"]) {
 
         stage('Packaging') {
             sh 'mvn clean install -DskipTests'
