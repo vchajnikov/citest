@@ -1,3 +1,13 @@
+[TOC]
+[ToC]
+[toc]
+{:TOC}
+{:ToC}
+{:toc}
+[[_TOC_]]
+[[_ToC_]]
+[[_toc_]]
+
 # Plant UML support test
 
 [TOC]
