@@ -1,5 +1,7 @@
 # Plant UML support test
 
+[TOC]
+
 ```plantuml
 
 class ClassA {
